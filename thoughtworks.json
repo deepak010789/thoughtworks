@@ -1,0 +1,298 @@
+{
+    "Parameters": {
+        "VPCName": {
+            "Default": "TW-VPC",
+            "Description": "Enter the name of the VPC",
+            "Type": "String"
+        },
+        "NginxAMI": {
+            "Default": "ami-30cf7c53",
+            "Description": "EC2 Image to be used for web server",
+            "Type": "AWS::EC2::Image::Id"
+        },
+        "NginxInstanceType": {
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium"
+            ],
+            "Default": "t2.micro",
+            "Description": "Instance type for the nginx web server",
+            "Type": "String"
+        },
+        "KeyName": {
+            "Description": "Select an existing EC2 KeyPair",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        }
+    },
+    "Resources": {
+        "ThoughtWorksVPC": {
+            "Properties": {
+                "CidrBlock": "182.168.0.0/16",
+                "EnableDnsHostnames": "true",
+                "EnableDnsSupport": "true",
+                "InstanceTenancy": "default",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "VPCName"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::VPC"
+        },
+        "ThoughtWorksSubnet": {
+            "Properties": {
+                "AvailabilityZone": "ap-southeast-1a",
+                "CidrBlock": "182.168.0.0/24",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ThoughtWorksSubnet"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ThoughtWorksVPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "ThoughtWorksVPCIG": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "ThoughtWorksRouteTable": {
+            "Properties": {
+                "VpcId": {
+                    "Ref": "ThoughtWorksVPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "ThoughtWorksRoute": {
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "ThoughtWorksVPCIG"
+                },
+                "RouteTableId": {
+                    "Ref": "ThoughtWorksRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "ThoughtWorksSubnetRouteTable": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "ThoughtWorksRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "ThoughtWorksSubnet"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "ThoughtWorksVPCIGAttachment": {
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "ThoughtWorksVPCIG"
+                },
+                "VpcId": {
+                    "Ref": "ThoughtWorksVPC"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        },
+        "ThoughtWorksSGWeb": {
+            "Properties": {
+                "GroupDescription": "outer world access for http/s",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "0",
+                        "IpProtocol": "tcp",
+                        "ToPort": "65535"
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "80",
+                        "IpProtocol": "tcp",
+                        "ToPort": "80"
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "443",
+                        "IpProtocol": "tcp",
+                        "ToPort": "443"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ThoughtWorksVPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "ThoughtWorksSGssh": {
+            "Properties": {
+                "GroupDescription": "Allow ssh to clients",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "0",
+                        "IpProtocol": "tcp",
+                        "ToPort": "65535"
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "22",
+                        "IpProtocol": "tcp",
+                        "ToPort": "22"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ThoughtWorksVPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "ThoughtWorksNginx1": {
+            "Properties": {
+                "ImageId": {
+                    "Ref": "NginxAMI"
+                },
+                "InstanceType": {
+                    "Ref": "NginxInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "Description": "nginx instance, does not have public IP",
+                        "DeviceIndex": 0,
+                        "GroupSet": [
+                            {
+                                "Ref": "ThoughtWorksSGWeb"
+                            },
+                            {
+                                "Ref": "ThoughtWorksSGssh"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "ThoughtWorksSubnet"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ThoughtWorksNginx1"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex \n",
+                                "\n",
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
+                                "\n",
+                                "sudo apt-get update -y\n",
+                                "sudo aptitude -y upgrade \n",
+                                "sudo apt-get install htop git curl python-dev sshpass libffi-dev libssl-dev -y\n",
+                                "cd /home/ubuntu \n",
+                                "wget https://bootstrap.pypa.io/get-pip.py\n",
+                                "sudo python get-pip.py\n",
+                                "sudo pip install markupsafe\n",
+                                "sudo pip install ansible==2.1.2.0\n",
+                                "ansible --version\n",
+                                "sudo aptitude install linux-image-extra-`uname -r` -y \n",
+                                "sudo sh -c 'wget -qO- https://get.docker.io/gpg | apt-key add -' \n",
+                                "sudo sh -c 'echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list' \n",
+                                "sudo aptitude -y update \n",
+                                "sudo aptitude install lxc-docker -y \n",
+                                "sudo sed -i 's/DEFAULT_FORWARD_POLICY=\"DROP\"/DEFAULT_FORWARD_POLICY=\"ACCEPT\"/g' /etc/default/ufw \n",
+                                "sudo ufw reload \n",
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "ThoughtWorksNginx3": {
+            "Properties": {
+                "ImageId": {
+                    "Ref": "NginxAMI"
+                },
+                "InstanceType": {
+                    "Ref": "NginxInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "Description": "nginx instance, does not have public IP",
+                        "DeviceIndex": 0,
+                        "GroupSet": [
+                            {
+                                "Ref": "ThoughtWorksSGWeb"
+                            },
+                            {
+                                "Ref": "ThoughtWorksSGssh"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "ThoughtWorksSubnet"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ThoughtWorksNginx3"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex \n",
+                                "\n",
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
+                                "\n",
+                                "sudo apt-get update -y\n",
+                                "sudo aptitude -y upgrade \n",
+                                "sudo apt-get install htop git curl python-dev sshpass libffi-dev libssl-dev -y\n",
+                                "cd /home/ubuntu \n",
+                                "wget https://bootstrap.pypa.io/get-pip.py\n",
+                                "sudo python get-pip.py\n",
+                                "sudo pip install markupsafe\n",
+                                "sudo pip install ansible==2.1.2.0\n",
+                                "ansible --version\n",
+                                "sudo aptitude install linux-image-extra-`uname -r` -y \n",
+                                "sudo sh -c 'wget -qO- https://get.docker.io/gpg | apt-key add -' \n",
+                                "sudo sh -c 'echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list' \n",
+                                "sudo aptitude update \n",
+                                "sudo aptitude install lxc-docker -y \n",
+                                "sudo sed -i 's/DEFAULT_FORWARD_POLICY=\"DROP\"/DEFAULT_FORWARD_POLICY=\"ACCEPT\"/g' /etc/default/ufw \n",
+                                "sudo ufw reload \n",
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        }
+    }
+}
