@@ -17,9 +17,6 @@ RUN apt-get install -y vim wget dialog net-tools
 # Download and Install Nginx
 RUN apt-get install -y nginx
 
-# Append "daemon off;" to the beginning of the configuration
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-
 # Expose ports
 EXPOSE 80
 
