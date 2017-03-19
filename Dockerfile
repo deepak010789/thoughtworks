@@ -9,7 +9,7 @@ MAINTAINER Deepak Agrawal
 
 ######################################## Setup Ansible ######################################
 RUN apt-get update
-RUN apt-get install curl sshpass -y
+RUN apt-get install wget curl sshpass -y
 RUN apt-get install gcc -y
 RUN apt-get install python-dev -y
 RUN apt-get install libffi-dev libssl-dev -y
