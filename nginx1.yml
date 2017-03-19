@@ -1,0 +1,20 @@
+---
+
+- hosts: tag_Name_ThoughtWorksNginx1
+
+  become: yes
+  become_user: "root"
+  become_method: sudo
+
+  tasks:
+
+    - name: "create a root directory for nginx"
+      file: path="/etc/tier1" state=directory mode=0755
+      tags:
+        - tier1_dir
+
+    - name: "create a test file"
+      copy: src="files/a.txt" dest="/etc/tier1/"
+
+    - name: "create a default nginx conf file"
+      copy: src="files/nginx1" dest="/etc/nginx/sites-available/default"
