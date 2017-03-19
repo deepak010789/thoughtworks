@@ -13,7 +13,8 @@ server {
         }
 
         location /tier2 {
-                alias /etc/tier2;
+                proxy_pass http://10.0.0.1;
+                rewrite /(.*) /$1 break;
         }
 
         location / {

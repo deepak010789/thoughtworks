@@ -1,6 +1,6 @@
 ---
 
-- hosts: tag_Name_ThoughtWorksNginx4
+- hosts: localhost
 
   become: yes
   become_user: "root"
@@ -13,8 +13,8 @@
       tags:
         - tier2_dir
 
-	- name: "create a test file"
-	  copy: src="files/a.txt" dest="/etc/tier2/"
+    - name: "create a test file"
+      copy: src="files/a.txt" dest="/etc/tier2/"
 
     - name: "create a default nginx conf file"
       copy: src="files/nginx2" dest="/etc/nginx/sites-available/default"

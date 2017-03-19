@@ -1,6 +1,6 @@
 ---
 
-- hosts: tag_Name_ThoughtWorksNginx1
+- hosts: localhost
 
   become: yes
   become_user: "root"

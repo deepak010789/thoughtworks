@@ -160,7 +160,7 @@
             },
             "Type": "AWS::EC2::SecurityGroup"
         },
-        "ThoughtWorksNginx1": {
+        "ThoughtWorksNginx2": {
             "Properties": {
                 "ImageId": {
                     "Ref": "NginxAMI"
@@ -192,74 +192,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "ThoughtWorksNginx1"
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#!/bin/bash -ex \n",
-                                "\n",
-                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
-                                "\n",
-                                "sudo apt-get update -y\n",
-                                "sudo aptitude -y upgrade \n",
-                                "sudo apt-get install htop git curl python-dev sshpass libffi-dev libssl-dev -y\n",
-                                "cd /home/ubuntu \n",
-                                "wget https://bootstrap.pypa.io/get-pip.py\n",
-                                "sudo python get-pip.py\n",
-                                "sudo pip install markupsafe\n",
-                                "sudo pip install ansible==2.1.2.0\n",
-                                "ansible --version\n",
-                                "sudo aptitude install linux-image-extra-`uname -r` -y \n",
-                                "sudo sh -c 'wget -qO- https://get.docker.io/gpg | apt-key add -' \n",
-                                "sudo sh -c 'echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list' \n",
-                                "sudo aptitude -y update \n",
-                                "sudo aptitude install lxc-docker -y \n",
-                                "sudo sed -i 's/DEFAULT_FORWARD_POLICY=\"DROP\"/DEFAULT_FORWARD_POLICY=\"ACCEPT\"/g' /etc/default/ufw \n",
-                                "sudo ufw reload \n",
-                            ]
-                        ]
-                    }
-                }
-            },
-            "Type": "AWS::EC2::Instance"
-        },
-        "ThoughtWorksNginx4": {
-            "Properties": {
-                "ImageId": {
-                    "Ref": "NginxAMI"
-                },
-                "InstanceType": {
-                    "Ref": "NginxInstanceType"
-                },
-                "KeyName": {
-                    "Ref": "KeyName"
-                },
-                "NetworkInterfaces": [
-                    {
-                        "AssociatePublicIpAddress": "true",
-                        "Description": "nginx instance, does not have public IP",
-                        "DeviceIndex": 0,
-                        "GroupSet": [
-                            {
-                                "Ref": "ThoughtWorksSGWeb"
-                            },
-                            {
-                                "Ref": "ThoughtWorksSGssh"
-                            }
-                        ],
-                        "SubnetId": {
-                            "Ref": "ThoughtWorksSubnet"
-                        }
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "ThoughtWorksNginx4"
+                        "Value": "ThoughtWorksNginx2"
                     }
                 ],
                 "UserData": {
@@ -291,7 +224,83 @@
                                 "git clone https://github.com/deepak010789/thoughtworks.git \n",
                                 "cd thoughtworks \n",
                                 "sudo docker build -t nginx_tw_img . \n",
-                                "sudo docker run --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
+                                "sudo docker run -v /home/ubuntu/thoughtworks:/opt/devops --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
+                                "sudo docker exec nginx_tw_cont ansible-playbook /etc/devops/nginx1.yml \n",
+                                "local_ip \n",
+                                "sudo docker exec nginx_tw_cont service nginx start \n",
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "ThoughtWorksNginx3": {
+            "Properties": {
+                "ImageId": {
+                    "Ref": "NginxAMI"
+                },
+                "InstanceType": {
+                    "Ref": "NginxInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "Description": "nginx instance, does not have public IP",
+                        "DeviceIndex": 0,
+                        "GroupSet": [
+                            {
+                                "Ref": "ThoughtWorksSGWeb"
+                            },
+                            {
+                                "Ref": "ThoughtWorksSGssh"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "ThoughtWorksSubnet"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ThoughtWorksNginx3"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex \n",
+                                "\n",
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
+                                "\n",
+                                "sudo apt-get update -y\n",
+                                "sudo aptitude -y upgrade \n",
+                                "sudo apt-get install htop git curl python-dev sshpass libffi-dev libssl-dev -y\n",
+                                "cd /home/ubuntu \n",
+                                "wget https://bootstrap.pypa.io/get-pip.py\n",
+                                "sudo python get-pip.py\n",
+                                "sudo pip install markupsafe\n",
+                                "sudo pip install ansible==2.1.2.0\n",
+                                "ansible --version\n",
+                                "sudo aptitude install linux-image-extra-`uname -r` -y \n",
+                                "sudo sh -c 'wget -qO- https://get.docker.io/gpg | apt-key add -' \n",
+                                "sudo sh -c 'echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list' \n",
+                                "sudo aptitude update \n",
+                                "sudo aptitude install lxc-docker -y \n",
+                                "sudo sed -i 's/DEFAULT_FORWARD_POLICY=\"DROP\"/DEFAULT_FORWARD_POLICY=\"ACCEPT\"/g' /etc/default/ufw \n",
+                                "sudo ufw reload \n",
+                                "cd /home/ubuntu/ \n",
+                                "git clone https://github.com/deepak010789/thoughtworks.git \n",
+                                "cd thoughtworks \n",
+                                "sudo docker build -t nginx_tw_img . \n",
+                                "sudo docker run -v /home/ubuntu/thoughtworks:/opt/devops --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
+                                "sudo docker exec nginx_tw_cont ansible-playbook /etc/devops/nginx2.yml \n",
                                 "sudo docker exec nginx_tw_cont service nginx start \n",
                             ]
                         ]
