@@ -264,6 +264,7 @@
                                 "sudo docker build -t nginx_tw_img . \n",
                                 "sudo docker run -v /home/ubuntu/thoughtworks:/opt/devops --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
                                 "sudo docker exec nginx_tw_cont ansible-playbook /opt/devops/nginx1.yml \n",
+                                "./ec2.py --list > /home/ubuntu/metadata.json \n",
                                 "nginx2_ip=`python3 -c \"import json; print (json.loads(open('/home/ubuntu/metadata.json', 'r').read())['tag_Name_ThoughtWorksNginx4'][0])\"` \n",
                                 "sudo docker exec nginx_tw_cont sed -i 's/10.0.0.1/$nginx2_ip/g' /etc/nginx/sites-available/default \n",
                                 "sudo docker exec nginx_tw_cont service nginx start \n",
