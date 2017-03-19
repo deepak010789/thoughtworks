@@ -192,7 +192,7 @@
             },
             "Type": "AWS::IAM::InstanceProfile"
         },
-        "ThoughtWorksNginx1": {
+        "ThoughtWorksNginx2": {
             "Properties": {
                 "IamInstanceProfile": {
                     "Ref": "ThoughtWorksIAMProfile"
@@ -227,7 +227,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "ThoughtWorksNginx1"
+                        "Value": "ThoughtWorksNginx2"
                     }
                 ],
                 "UserData": {
