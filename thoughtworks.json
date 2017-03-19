@@ -227,7 +227,7 @@
             },
             "Type": "AWS::EC2::Instance"
         },
-        "ThoughtWorksNginx3": {
+        "ThoughtWorksNginx4": {
             "Properties": {
                 "ImageId": {
                     "Ref": "NginxAMI"
@@ -259,7 +259,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "ThoughtWorksNginx3"
+                        "Value": "ThoughtWorksNginx4"
                     }
                 ],
                 "UserData": {
@@ -287,6 +287,12 @@
                                 "sudo aptitude install lxc-docker -y \n",
                                 "sudo sed -i 's/DEFAULT_FORWARD_POLICY=\"DROP\"/DEFAULT_FORWARD_POLICY=\"ACCEPT\"/g' /etc/default/ufw \n",
                                 "sudo ufw reload \n",
+                                "cd /home/ubuntu/ \n",
+                                "git clone https://github.com/deepak010789/thoughtworks.git \n",
+                                "cd thoughtworks \n",
+                                "sudo docker build -t nginx_tw_img . \n",
+                                "sudo docker run --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
+                                "sudo docker exec nginx_tw_cont service nginx start \n",
                             ]
                         ]
                     }
