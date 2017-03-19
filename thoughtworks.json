@@ -160,8 +160,43 @@
             },
             "Type": "AWS::EC2::SecurityGroup"
         },
+        "ThoughtWorksRole": {
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "Path": "/"
+            },
+            "Type": "AWS::IAM::Role"
+        },
+        "ThoughtWorksIAMProfile": {
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "ThoughtWorksRole"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::InstanceProfile"
+        },
         "ThoughtWorksNginx2": {
             "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "ThoughtWorksIAMProfile"
+                },
                 "ImageId": {
                     "Ref": "NginxAMI"
                 },
@@ -206,8 +241,10 @@
                                 "\n",
                                 "sudo apt-get update -y\n",
                                 "sudo aptitude -y upgrade \n",
-                                "sudo apt-get install htop git curl python-dev sshpass libffi-dev libssl-dev -y\n",
+                                "sudo apt-get install awscli git curl python-dev sshpass libffi-dev libssl-dev -y\n",
                                 "cd /home/ubuntu \n",
+                                "wget https://s3-ap-southeast-1.amazonaws.com/thoughtworks-1mg/access.sh \n",
+                                "source access.sh \n",
                                 "wget https://bootstrap.pypa.io/get-pip.py\n",
                                 "sudo python get-pip.py\n",
                                 "sudo pip install markupsafe\n",
@@ -226,7 +263,8 @@
                                 "sudo docker build -t nginx_tw_img . \n",
                                 "sudo docker run -v /home/ubuntu/thoughtworks:/opt/devops --name nginx_tw_cont -d -it -p 80:80 nginx_tw_img /bin/bash \n",
                                 "sudo docker exec nginx_tw_cont ansible-playbook /etc/devops/nginx1.yml \n",
-                                "local_ip \n",
+                                "nginx2_ip=`python3 -c \"import json; print (json.loads(open('/home/ubuntu/metadata.json', 'r').read())['tag_Name_ThoughtWorksNginx2'][0])\"` \n",
+                                "sudo docker exec nginx_tw_cont sed -i 's/10.0.0.1/$nginx2_ip/g' /etc/nginx/sites-available/default \n",
                                 "sudo docker exec nginx_tw_cont service nginx start \n",
                             ]
                         ]
@@ -237,6 +275,9 @@
         },
         "ThoughtWorksNginx3": {
             "Properties": {
+                "IamInstanceProfile": {
+                    "Ref": "ThoughtWorksIAMProfile"
+                },
                 "ImageId": {
                     "Ref": "NginxAMI"
                 },
