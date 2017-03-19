@@ -27,5 +27,6 @@ RUN apt-get install -y nginx
 EXPOSE 80
 
 # when creating a new container
-#CMD service nginx start
+CMD service nginx start
+# CMD ["nginx", "-g", "daemon off;"]
 ##################################
