@@ -24,7 +24,10 @@ RUN rm -v /etc/nginx/sites-available/default
 ADD default /etc/nginx/sites-available/default
 
 # link default from sites-available to sites-enabled
-RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# create dir /etc/tier1
+RUN mkdir /etc/tier1
 
 # Expose ports
 EXPOSE 80
